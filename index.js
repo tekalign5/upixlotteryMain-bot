@@ -9,12 +9,16 @@ const ADMIN_ID = '6650430482'; // Replace with your Admin ID
 let userIds = [];
 let userData = {};
 let savedMessage = '';
+// Define a variable to store the "luckiest history" message
+let luckiestHistoryMessage = '';
 let isAdminAddingTicket = false; // Flag to track when admin is adding a ticket
+let isAddForwarded = false;
 let isUserSendingForVerification = false; // Flag to track when user sends a photo for verification
 let isUserGettingTicket = false;
 let isUserAddingText = false;
 let verified = true;
 let isUserInCommentState = false; // Flag to track if the user is in 'Comment' state
+let isAdminBroadcasting = false; // Flag to check if admin is in broadcast mode
 
 // Correctly get the directory path
 const __dirname = path.resolve();  // This will get the current working directory
@@ -28,11 +32,11 @@ if (!fs.existsSync(ticketDir)) {
 // Start command
 bot.start((ctx) => {
   const userId = ctx.from.id.toString();
-  
+   
   // Track users who interact with the bot
   if (!userIds.includes(userId)) {
     userIds.push(userId);
-  }
+  };
 
   if (userId === ADMIN_ID) {
     ctx.reply('Welcome Admin! You can manage tickets.', {
@@ -63,45 +67,23 @@ bot.start((ctx) => {
 
 // Handle 'Broadcast' command
 bot.hears('Broadcast', (ctx) => {
-  const userId = ctx.from.id.toString();
-
-  // Check if the user is the admin
-  if (userId !== ADMIN_ID) {
-    ctx.reply("Only the admin can broadcast messages.");
-    return;
-  }
-
-  // Ask the admin to send the message to broadcast
-  ctx.reply('Please send the message you want to broadcast to all users.');
-
-  // Listen for the next text message (which should be the broadcast message)
-  bot.on('text', async (ctx) => {
-    const messageText = ctx.message.text;
-
-    // Check if there are any users to send the message to
-    if (userIds.length === 0) {
-      ctx.reply("No users have interacted with the bot yet.");
-      return;
-    }
-
-    // Send the broadcast message to all users
-    for (const id of userIds) {
-      try {
-        await bot.telegram.sendMessage(id, messageText);
-      } catch (error) {
-        console.error(`Failed to send message to user ${id}:, error`);
-      }
-    }
-
-    ctx.reply('Message sent to all users!');
-  });
+  ctx.reply('Please send the message you want to broadcast. You can send text, media, or a combination of both.');
+  isAdminBroadcasting = true;  // Set the flag to indicate the admin is broadcasting
 });
+
 
 // Handle other commands (just example functionality)
 bot.hears('Available slot', (ctx) => ctx.reply(savedMessage || 'No added available tickets yet.'));
-bot.hears('Luckiests on previews round', (ctx) => ctx.reply('You chose Luckiests on previews round'));
-bot.hears('Add the luckiest history', (ctx) => ctx.reply('You chose Add the luckiest history'));
 
+
+bot.hears('Luckiests on previews round', (ctx) => {
+  // Send the saved "luckiest history" message to the user or admin
+  if (luckiestHistoryMessage) {
+    ctx.reply(`The luckiest history is: \n${luckiestHistoryMessage}`);
+  } else {
+    ctx.reply('No luckiest history message has been added yet.');
+  }
+});
 bot.hears('About Owner & Comment', async (ctx) => {
   const userId = ctx.from.id.toString();
   await ctx.telegram.sendPhoto(userId, { source: './owner image.jpg' }, {
@@ -153,10 +135,49 @@ bot.hears('Get a ticket', (ctx) => {
   isUserGettingTicket = true;
 });
 
+// Handle the 'Add the luckiest history' button click
+bot.hears('Add the luckiest history', (ctx) => {
+  if (ctx.from.id.toString() === ADMIN_ID) {
+    ctx.reply('Please forward the luckiest history message to this bot.');
+    isAdminAddingTicket = false;  // Reset the ticket addition flag
+    isAddForwarded = true;   // Flag for adding the history message
+  }
+});
+
 // Handle text input for various tasks
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id.toString();
-  const messageText = ctx.message.text;
+
+
+
+    if (isAdminBroadcasting && userId === ADMIN_ID) {
+      const messageText = ctx.message.text;
+  
+      // Broadcast the text message to all users
+      if (userIds.length > 0) {
+        for (const id of userIds) {
+          try {
+            await bot.telegram.sendMessage(id, messageText);
+          } catch (error) {
+            console.error(`Failed to send message to user ${id}:`, error);
+          }
+        }
+        ctx.reply('Your text message has been broadcasted to all users!');
+      } else {
+        ctx.reply('No users to broadcast the message to.');
+      }
+  
+      isAdminBroadcasting = false;  // Reset the flag
+    }
+
+
+  if (isAddForwarded && ctx.from.id.toString() === ADMIN_ID) {
+    // Save the forwarded message as the luckiest history message
+    luckiestHistoryMessage = ctx.message.text || 'No message content available';
+    ctx.reply('The luckiest history message has been saved!');
+    isAddForwarded = false; // Reset the flag after saving the message
+  }
+
 
   if (isAdminAddingTicket && userId === ADMIN_ID) {
     savedMessage = messageText;
@@ -233,8 +254,60 @@ if (isUserInCommentState) {
     await ctx.reply('Sorry, there was an error sending your comment to the admin.');
   }
 }
-
+  
 });
+
+
+// Handle media (image, video, etc.) from the admin
+bot.on(['photo', 'video', 'audio'], async (ctx) => {
+  const userId = ctx.from.id.toString();
+
+  if (isAdminBroadcasting && userId === ADMIN_ID) {
+    const message = ctx.message;
+    const messageText = ctx.message.caption
+    const caption = `${messageText}`; // Default caption for all media
+
+    // Broadcast image with caption
+    if (message.photo) {
+      const fileId = message.photo[message.photo.length - 1].file_id;
+      for (const id of userIds) {
+        try {
+          await bot.telegram.sendPhoto(id, fileId, { caption: caption });
+        } catch (error) {
+          console.error(`Failed to send image to user ${id}:`, error);
+        }
+      }
+    }
+
+    // Broadcast video with caption
+    if (message.video) {
+      const fileId = message.video.file_id;
+      for (const id of userIds) {
+        try {
+          await bot.telegram.sendVideo(id, fileId, { caption: caption });
+        } catch (error) {
+          console.error(`Failed to send video to user ${id}:`, error);
+        }
+      }
+    }
+
+    // Broadcast audio with caption
+    if (message.audio) {
+      const fileId = message.audio.file_id;
+      for (const id of userIds) {
+        try {
+          await bot.telegram.sendAudio(id, fileId, { caption: caption });
+        } catch (error) {
+          console.error(`Failed to send audio to user ${id}:`, error);
+        }
+      }
+    }
+
+    ctx.reply('Your media with caption has been broadcasted to all users!');
+    isAdminBroadcasting = false;  // Reset the flag
+  }
+});
+
 
 // Generate ticket image using a photo background
 async function generateTicketImage(user, userId) {
@@ -293,6 +366,7 @@ bot.on('callback_query', async (ctx) => {
       await ctx.telegram.sendPhoto(ctx.chat.id, { source: imageBuffer }, {
         caption: 'Your ticket is not verified.\nTo verify, please send ticket money to Telebirr account 0984403840.\nThen come back and send me screenshot.\nGOOD LUCK',
       });
+
     }
 
     if (ctx.callbackQuery.data === 'Verify') {
@@ -311,7 +385,7 @@ bot.on('callback_query', async (ctx) => {
         return;
       }
 
-      userData[targetUserId].verified = true; // Set verified flag
+      userData[targetUserId].verified = false; // Set verified flag
 
       const imageFilePath = await generateVerifiedTicketImage(userData[targetUserId], targetUserId);
       const imageBuffer = await fs.promises.readFile(imageFilePath);
@@ -403,15 +477,17 @@ bot.hears('Add ticket', (ctx) => {
   if (ctx.from.id.toString() === ADMIN_ID) {
     ctx.reply('Please send the ticket message you want to add.');
     isAdminAddingTicket = true; // Set flag when admin is adding a ticket
+    isAddForwarded =false;
   }
 });
+
+
 
 // Handle photo input
 bot.on('photo', async (ctx) => {
   const userId = ctx.from.id.toString();
-  
   // Check if the message is from the admin or a user
-  if (ctx.from.id.toString() === ADMIN_ID) {
+  if (ctx.from.id.toString() === ADMIN_ID && isUserSendingForVerification) {
     // If the admin is adding a ticket or doing something else, don't treat it as a verification photo
     if (isAdminAddingTicket) {
       ctx.reply("Admin, you've sent a photo while adding a ticket. Please send the ticket message instead.");
@@ -450,8 +526,8 @@ bot.on('photo', async (ctx) => {
     // If user data is not complete (e.g., they haven't registered yet), inform the user
     ctx.reply("You must complete your ticket registration before sending a photo for verification.");
   }
-});
 
+});
 
 // Start the bot
 bot.launch().catch(err => console.error('Error launching bot:', err));
