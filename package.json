@@ -1,0 +1,22 @@
+{
+  "name": "aastu-bot",
+  "version": "1.0.0",
+  "description": "This is lottery bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "hi"
+  },
+  "author": "Tekalign Dabena",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "canvas": "^3.1.0",
+    "fontkit": "^2.0.4",
+    "jspdf": "^2.5.2",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.16.0",
+    "sharp": "^0.33.5",
+    "telegraf": "^4.16.3"
+  },
+  "keywords": []
+}
