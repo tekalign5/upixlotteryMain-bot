@@ -1,10 +1,14 @@
 import { Telegraf } from 'telegraf';
+//import { Composer } from 'micro-bot';
+
 import { createCanvas, loadImage } from 'canvas';
 import fs from 'fs';
 import path from 'path';
 
 // Initialize the bot with the bot token
-const bot = new Telegraf('7841485136:AAGLEfhniQQTmZDhGhz1gxhhVrxuX3oA5Po'); // Replace with your bot's API key
+const bot = new Telegraf('7586226201:AAFqPzVQjVvQY3f4s-RPWINhYvb1yRt_vI4'); // Replace with your bot's API key
+//const bot = new Composer()
+
 const ADMIN_ID = '6650430482'; // Replace with your Admin ID
 let userIds = [];
 let userData = {};
@@ -19,6 +23,7 @@ let isUserAddingText = false;
 let verified = true;
 let isUserInCommentState = false; // Flag to track if the user is in 'Comment' state
 let isAdminBroadcasting = false; // Flag to check if admin is in broadcast mode
+
 
 // Correctly get the directory path
 const __dirname = path.resolve();  // This will get the current working directory
@@ -44,7 +49,7 @@ bot.start((ctx) => {
         keyboard: [
           ['Add ticket', ' Broadcast'],
           ['Get a ticket🎫', 'Available tickets'],
-          ['Luckiests on previews round', 'About Owner & Comment'],
+          ['Luckiests on previews round💰', 'About Owner & Comment'],
           ['Add the luckiest history']
         ],
         resize_keyboard: true,
@@ -55,8 +60,10 @@ bot.start((ctx) => {
     ctx.reply('Welcome to UPix LOTTERY. Please get a ticket:', {
       reply_markup: {
         keyboard: [
-          ['Get a ticket🎫', 'Available tickets'],
-          ['Luckiests on previews round', 'About Owner & Comment'],
+          ['Get a ticket🎫'],
+          ['Available tickets'],
+          ['Luckiests on previews round💰'], 
+          ['About Owner & Comment'],
         ],
         resize_keyboard: true,
         one_time_keyboard: true,
@@ -76,7 +83,7 @@ bot.hears('Broadcast', (ctx) => {
 bot.hears('Available tickets', (ctx) => ctx.reply(savedMessage || 'No added available tickets yet.'));
 
 
-bot.hears('Luckiests on previews round', (ctx) => {
+bot.hears('Luckiests on previews round💰', (ctx) => {
   // Send the saved "luckiest history" message to the user or admin
   if (luckiestHistoryMessage) {
     ctx.reply(`The luckiest history is: \n${luckiestHistoryMessage}`);
@@ -122,6 +129,7 @@ bot.hears('Add ticket', (ctx) => {
   if (ctx.from.id.toString() === ADMIN_ID) {
     ctx.reply('Please send the ticket numbers you want to list. Note that it must be only text');
     isAdminAddingTicket = true; // Set flag when admin is adding a ticket
+    isAddForwarded =false;
   }
 });
 
@@ -131,7 +139,7 @@ bot.hears('Get a ticket🎫', (ctx) => {
     ctx.reply('Ooops! No Available tickets right now. Try again later.');
     return;
   }
-  ctx.reply('Please send me your first name');
+  ctx.reply('Hey there! 👋 Can you share your first name with me?');
   isUserGettingTicket = true;
   
 });
@@ -189,17 +197,18 @@ bot.on('text', async (ctx) => {
   }
 
   if (isUserGettingTicket) {
+  
     if (!userData[userId]) {
       const messageText = ctx.message.text;
       userData[userId] = { name: messageText };
-      ctx.reply('Got your name! Now, please send me your phone as ID. eg.0901010100');
+      ctx.reply('😎Got your name! Now, please send me your phone. eg.0901010100');
       return;
     }
 
     if (!userData[userId].id) {
       const messageText = ctx.message.text;
       userData[userId].id = messageText;
-      ctx.reply(`Your name is ${userData[userId].name} and your ID is ${userData[userId].id}`);
+      ctx.reply(`Your name is ${userData[userId].name} and your phone is ${userData[userId].id}`);
       ctx.reply(savedMessage);
       isUserGettingTicket = false;
       isUserAddingText = true;
@@ -212,7 +221,7 @@ bot.on('text', async (ctx) => {
     userData[userId].additionalText = messageText;
 
     ctx.reply(
-      `Your name is ${userData[userId].name}, your ID number is ${userData[userId].id}, and your ticket number is: ${userData[userId].additionalText}`,
+      `Your name is ${userData[userId].name}, your phone number is ${userData[userId].id}, and your ticket number is: ${userData[userId].additionalText}`,
       {
         reply_markup: {
           inline_keyboard: [[{ text: 'Get the ticket', callback_data: 'Get_the_ticket' }]],
@@ -226,7 +235,10 @@ bot.on('text', async (ctx) => {
 
  // Handle user comment input
 if (isUserInCommentState) {
-  const userId = ctx.from.id;
+   const userId = ctx.from.id;
+  let backupData = { ...userData[userId] }; // Create a backup before deletion
+  userData[userId] = backupData;
+ 
   const messageText = ctx.message.text;
   console.log(userId);
   
@@ -235,7 +247,7 @@ if (isUserInCommentState) {
     console.error(`User data not found for user ${userId}`);
     
     // Notify the user if their data is not complete
-    await ctx.reply('Sorry, you have not play UPix lottery, To give a comment atleast you have play (Get ticket) onece');
+    await ctx.reply(`Sorry, you have't play UPix lottery before, To give a comment atleast you have play (Get ticket) once`);
     
     // Reset the comment state flag
     isUserInCommentState = false;
@@ -258,6 +270,7 @@ if (isUserInCommentState) {
     console.error('Error forwarding message:', error);
     await ctx.reply('Sorry, there was an error sending your comment to the admin.');
   }
+  delete userData[userId];
 }
   
 });
@@ -295,7 +308,7 @@ if(!isAdminBroadcasting){
         },
       });
 
-      ctx.reply('Photo received and forwarded to the admin for verification. Please wait for a response.', {
+      ctx.reply('Screenshot received and forwarded to the admin for verification. Please wait for a response.', {
         reply_markup: {
           inline_keyboard: [[{ text: 'Get Verified ticket', callback_data: 'Get_Verified_ticket' }]],
         },
@@ -420,13 +433,16 @@ bot.on('callback_query', async (ctx) => {
       const imageBuffer = await fs.promises.readFile(imageFilePath);
 
       await ctx.telegram.sendPhoto(ctx.chat.id, { source: imageBuffer }, {
-        caption: 'Your ticket is not verified.\nTo verify, please send ticket money to Telebirr account 0984403840.\nThen come back and send me screenshot.\nGOOD LUCK',
+        caption: 'Your ticket is not \u274C verified.\nTo verify, please send ticket money to Telebirr account 0984403840.\nThen come back and send me screenshot.\nGOOD LUCK',
       });
 
     }
-
+    let backupData = { ...userData[userId] }; // Create a backup before deletion
     if (ctx.callbackQuery.data === 'Verify') {
       const adminId = ctx.from.id.toString();
+     
+      userData[userId] = backupData;
+     
       verified = false;
 
       if (adminId !== ADMIN_ID) {
@@ -441,7 +457,7 @@ bot.on('callback_query', async (ctx) => {
         return;
       }
 
-      userData[targetUserId].verified = false; // Set verified flag
+      userData[targetUserId].verified = true; // Set verified flag
 
       const imageFilePath = await generateVerifiedTicketImage(userData[targetUserId], targetUserId);
       const imageBuffer = await fs.promises.readFile(imageFilePath);
@@ -449,11 +465,13 @@ bot.on('callback_query', async (ctx) => {
       await ctx.telegram.sendPhoto(targetUserId, { source: imageBuffer }, {
         caption: `User's ticket has been verified. Name is ${userData[userId].name}, ID number is ${userData[userId].id}, and ticket number is: ${userData[userId].additionalText}`,
       });
+     
     }
 
     if (ctx.callbackQuery.data === 'Get_Verified_ticket') {
+      
       const userId = ctx.from.id.toString();
-
+      userData[userId] = backupData;
       if (!userData[userId]) {
         ctx.reply('Error: User data not found for verification.');
         return;
@@ -463,7 +481,7 @@ bot.on('callback_query', async (ctx) => {
       if (verified === true) {
         ctx.reply('Sorry, your ticket is on the way. Please come back and check later.');
         return;
-      }
+      } else{
 
       const imageFilePath = await generateVerifiedTicketImage(user, userId);
       const imageBuffer = await fs.promises.readFile(imageFilePath);
@@ -471,7 +489,11 @@ bot.on('callback_query', async (ctx) => {
       await ctx.telegram.sendPhoto(userId, { source: imageBuffer }, {
         caption: 'Your ticket is now verified! Please do not lose your ticket.\nThank you for your participation!\nGOOD LUCK',
       });
-    }
+      verified= true
+      // Once the verified ticket is sent, reset the user's data
+      delete userData[userId];
+
+    }}
 
     if (ctx.callbackQuery.data === 'submit_comment') {
       await ctx.reply('Please type your comment, and I will forward it to the admin.');
@@ -526,26 +548,7 @@ async function generateVerifiedTicketImage(user, userId) {
   return imageFilePath;
 }
 
+//module.exports = bot
+bot.launch()
+  
 
-
-// Admin adding a ticket
-bot.hears('Add ticket', (ctx) => {
-  if (ctx.from.id.toString() === ADMIN_ID) {
-    ctx.reply('Please send the ticket message you want to add.');
-    isAdminAddingTicket = true; // Set flag when admin is adding a ticket
-    isAddForwarded =false;
-  }
-});
-
-
-
-
-// Reset webhook and start bot
-bot.telegram.deleteWebhook().then(() => {
-  console.log('Webhook removed, bot can now use polling');
-  bot.launch().then(() => console.log('Bot started using polling!'));
-});
-
-// Graceful shutdown
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
