@@ -1,5 +1,5 @@
 import { Telegraf } from 'telegraf';
-import { createCanvas, loadImage } from 'canvas';
+import { createCanvas, loadImage } from '@napi-rs/canvas';
 import fs from 'fs';
 import path from 'path';
 
