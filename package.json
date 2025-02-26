@@ -2,9 +2,13 @@
   "name": "aastu-bot",
   "version": "1.0.0",
   "description": "This is lottery bot",
-  "main": "index.js",
+  "main": "bot.js",
   "scripts": {
-    "test": "hi"
+    "test": "hi",
+    "start": "node bot.js"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "author": "Tekalign Dabena",
   "license": "ISC",

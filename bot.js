@@ -1,15 +1,12 @@
 import { Telegraf } from 'telegraf';
-//import { Composer } from 'micro-bot';
-
 import { createCanvas, loadImage } from 'canvas';
 import fs from 'fs';
 import path from 'path';
 
-// Initialize the bot with the bot token
 const bot = new Telegraf('7586226201:AAFqPzVQjVvQY3f4s-RPWINhYvb1yRt_vI4'); // Replace with your bot's API key
-//const bot = new Composer()
 
-const ADMIN_ID = '6650430482'; // Replace with your Admin ID
+
+const ADMIN_ID = '6650430482'; // Replace with your Admin I
 let userIds = [];
 let userData = {};
 let savedMessage = '';
@@ -23,6 +20,7 @@ let isUserAddingText = false;
 let verified = true;
 let isUserInCommentState = false; // Flag to track if the user is in 'Comment' state
 let isAdminBroadcasting = false; // Flag to check if admin is in broadcast mode
+let clickedFirst = false;
 
 
 // Correctly get the directory path
@@ -97,21 +95,14 @@ bot.hears('About Owner & Comment', async (ctx) => {
     caption: 'Tekalign Dabena – Founder of UPix Lottery | Electromechanical Engineering Student',
   });
   await ctx.reply(`Hello, I’m Tekalign Dabena, a second-year Electromechanical Engineering student at Addis Ababa Science and Technology University, and the proud founder of UPix Lottery.
-
-At UPix Lottery, I blend my passion for engineering with my entrepreneurial spirit to create an innovative and trustworthy lottery platform. 
-I take full responsibility for everything that happens within the company, ensuring a seamless and exciting experience for our users.
-
-Who I Am:
-Name: Tekalign Dabena
-
-University: Addis Ababa Science and Technology University
-Course: Electromechanical Engineering (Second Year)
-Role: Founder & CEO, UPix Lottery
-As an Electromechanical Engineering student, I thrive on solving real-world problems. My journey with UPix Lottery allows me to apply my technical skills in creating a user-friendly, secure, and transparent lottery experience.
-
-UPix Lottery:
 UPix Lottery is redefining the lottery experience with cutting-edge technology. 
-As the founder, I am hands-on in all aspects of the business, from software development to customer engagement. My goal is to ensure fairness, transparency, and excitement for every participant.
+As the founder, I am hands-on in all aspects of the business, from software development to customer 
+engagement. My goal is to ensure fairness, transparency, and excitement for every participant.
+
+At UPix Lottery, I blend my passion for engineering with my entrepreneurial spirit to create an 
+innovative and trustworthy lottery platform. 
+I take full responsibility for everything that happens within the company, ensuring a seamless and 
+exciting experience for our users.
 
 Let’s Connect:
 Email: brighttraining63@gmail.com
@@ -240,7 +231,7 @@ if (isUserInCommentState) {
   userData[userId] = backupData;
  
   const messageText = ctx.message.text;
-  console.log(userId);
+
   
   // Check if user data exists before forwarding comment
   if (!userData[userId]) {
@@ -420,6 +411,7 @@ async function generateTicketImage(user, userId) {
 
 // Handle inline button press
 bot.on('callback_query', async (ctx) => {
+
   try {
     const userId = ctx.from.id.toString();
 
@@ -433,14 +425,14 @@ bot.on('callback_query', async (ctx) => {
       const imageBuffer = await fs.promises.readFile(imageFilePath);
 
       await ctx.telegram.sendPhoto(ctx.chat.id, { source: imageBuffer }, {
-        caption: 'Your ticket is not \u274C verified.\nTo verify, please send ticket money to Telebirr account 0984403840.\nThen come back and send me screenshot.\nGOOD LUCK',
+        caption: 'Your ticket is not \u274C verified.\nTo verify, please send ticket money to Telebirr account 0984403840 CBE.\nThen come back and send me screenshot.\nGOOD LUCK',
       });
 
     }
-    let backupData = { ...userData[userId] }; // Create a backup before deletion
     if (ctx.callbackQuery.data === 'Verify') {
+      clickedFirst = true;
       const adminId = ctx.from.id.toString();
-     
+      let backupData = { ...userData[userId] }; // Create a backup before deletion
       userData[userId] = backupData;
      
       verified = false;
@@ -462,15 +454,18 @@ bot.on('callback_query', async (ctx) => {
       const imageFilePath = await generateVerifiedTicketImage(userData[targetUserId], targetUserId);
       const imageBuffer = await fs.promises.readFile(imageFilePath);
 
-      await ctx.telegram.sendPhoto(targetUserId, { source: imageBuffer }, {
-        caption: `User's ticket has been verified. Name is ${userData[userId].name}, ID number is ${userData[userId].id}, and ticket number is: ${userData[userId].additionalText}`,
-      });
+      /*await ctx.telegram.sendPhoto(targetUserId, { source: imageBuffer }, {
+        caption: `User's ticket has been verified. Name is ${userData[targetUserId].name}, ID number is ${userData[targetUserId].id}, and ticket number is: ${userData[targetUserId].additionalText}`,
+      });*/
+
+    await ctx.reply('Ticket has been verified');
      
     }
 
     if (ctx.callbackQuery.data === 'Get_Verified_ticket') {
       
       const userId = ctx.from.id.toString();
+      let backupData = { ...userData[userId] }; // Create a backup before deletion
       userData[userId] = backupData;
       if (!userData[userId]) {
         ctx.reply('Error: User data not found for verification.');
@@ -489,11 +484,17 @@ bot.on('callback_query', async (ctx) => {
       await ctx.telegram.sendPhoto(userId, { source: imageBuffer }, {
         caption: 'Your ticket is now verified! Please do not lose your ticket.\nThank you for your participation!\nGOOD LUCK',
       });
+      await ctx.telegram.sendPhoto(ADMIN_ID, { source: imageBuffer }, {
+        caption: `User's ticket has been verified. Name is ${userData[userId].name}, ID number is ${userData[userId].id}, and ticket number is: ${userData[userId].additionalText}`,
+      });
       verified= true
-      // Once the verified ticket is sent, reset the user's data
-      delete userData[userId];
+      
 
-    }}
+    }
+    if(clickedFirst ){
+  // Once the verified ticket is sent, reset the user's data
+      delete userData[userId];}
+  }
 
     if (ctx.callbackQuery.data === 'submit_comment') {
       await ctx.reply('Please type your comment, and I will forward it to the admin.');
@@ -551,4 +552,5 @@ async function generateVerifiedTicketImage(user, userId) {
 //module.exports = bot
 bot.launch()
   
-
+process.on("SIGINT", () => bot.stop("SIGINT"));
+process.on("SIGTERM", () => bot.stop("SIGTERM"));
