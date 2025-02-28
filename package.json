@@ -5,7 +5,7 @@
   "main": "bot.js",
   "scripts": {
     "test": "hi",
-    "start": "node bot.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=16.0.0"
