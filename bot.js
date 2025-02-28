@@ -425,7 +425,7 @@ bot.on('callback_query', async (ctx) => {
       const imageBuffer = await fs.promises.readFile(imageFilePath);
 
       await ctx.telegram.sendPhoto(ctx.chat.id, { source: imageBuffer }, {
-        caption: 'Your ticket is not \u274C verified.\nTo verify, please send ticket money to Telebirr account 0984403840 CBE.\nThen come back and send me screenshot.\nGOOD LUCK',
+        caption: 'Your ticket is not \u274C verified.\nTo verify, please send ticket money to Telebirr account 0984403840 \nCBE birr 0984403840 \n CBE 1000591595028\N Dashin bank 5749136027011.\nThen come back and send me screenshot.\nGOOD LUCK',
       });
 
     }
