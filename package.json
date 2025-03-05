@@ -23,7 +23,8 @@
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.16.0",
     "sharp": "^0.33.5",
-    "telegraf": "^4.16.3"
+    "telegraf": "^4.16.3",
+    "telegraf-session-local": "^2.1.1"
   },
   "keywords": []
 }

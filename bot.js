@@ -3,6 +3,7 @@ import { createCanvas, loadImage } from '@napi-rs/canvas';
 import fs from 'fs';
 import path from 'path';
 
+
 const bot = new Telegraf('7586226201:AAFqPzVQjVvQY3f4s-RPWINhYvb1yRt_vI4'); // Replace with your bot's API key
 
 
@@ -209,6 +210,9 @@ bot.on('text', async (ctx) => {
 
   if (isUserAddingText) {
     const messageText = ctx.message.text;
+    if (!userData[userId]) {
+      userData[userId] = {}; // Initialize if undefined
+  }
     userData[userId].additionalText = messageText;
 
     ctx.reply(
@@ -233,23 +237,13 @@ if (isUserInCommentState) {
   const messageText = ctx.message.text;
 
   
-  // Check if user data exists before forwarding comment
-  if (!userData[userId]) {
-    console.error(`User data not found for user ${userId}`);
-    
-    // Notify the user if their data is not complete
-    await ctx.reply(`Sorry, you have't play UPix lottery before, To give a comment atleast you have play (Get ticket) once`);
-    
-    // Reset the comment state flag
-    isUserInCommentState = false;
-    return;
-  }
+
 
   try {
     // Forward the message to the admin
     await bot.telegram.sendMessage(
       ADMIN_ID,
-      `New comment from user ${userData[userId].name} ${userData[userId].id} (${userId}):\n\n${messageText}`
+      `New comment from user :\n\n${messageText}`
     );
 
     // Inform the user that their message has been sent to the admin
@@ -497,7 +491,7 @@ bot.on('callback_query', async (ctx) => {
   }
 
     if (ctx.callbackQuery.data === 'submit_comment') {
-      await ctx.reply('Please type your comment, and I will forward it to the admin.');
+      await ctx.reply('Please type your comment anonymously, and I will forward it to the admin. for complain and question contact @admnistrat ');
       isUserInCommentState = true;
     }
 
