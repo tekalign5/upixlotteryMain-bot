@@ -24,6 +24,13 @@ let isAdminBroadcasting = false; // Flag to check if admin is in broadcast mode
 let clickedFirst = false;
 
 
+bot.catch((err) => {
+  console.error("Error in bot:", err);
+});
+
+
+
+
 // Correctly get the directory path
 const __dirname = path.resolve();  // This will get the current working directory
 
@@ -35,6 +42,8 @@ if (!fs.existsSync(ticketDir)) {
 
 // Start command
 bot.start((ctx) => {
+
+  try {
   const userId = ctx.from.id.toString();
    
   // Track users who interact with the bot
@@ -69,28 +78,69 @@ bot.start((ctx) => {
       },
     });
   }
+
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
 });
+
 
 // Handle 'Broadcast' command
 bot.hears('Broadcast', (ctx) => {
+  try{
   ctx.reply('Please send the message you want to broadcast. You can send text, media, or a combination of both.');
   isAdminBroadcasting = true;  // Set the flag to indicate the admin is broadcasting
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
 });
 
 
+
+
 // Handle other commands (just example functionality)
-bot.hears('Available tickets', (ctx) => ctx.reply(savedMessage || 'No added available tickets yet.'));
+bot.hears('Available tickets', (ctx) => {
+  
+  try{
+  ctx.reply(savedMessage || 'No added available tickets yet.') } 
+  catch (error) {
+    if (error.response && error.response.error_code === 403) {
+        console.log(`User ${ctx.from.id} has blocked the bot.`);
+    } else {
+        console.error('An error occurred:', error);
+    }
+}
+});
 
 
 bot.hears('Luckiests on previews round💰', (ctx) => {
   // Send the saved "luckiest history" message to the user or admin
+  try{
   if (luckiestHistoryMessage) {
     ctx.reply(`The luckiest history is: \n${luckiestHistoryMessage}`);
   } else {
     ctx.reply('No luckiest history message has been added yet.');
   }
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
 });
+
+
 bot.hears('About Owner & Comment', async (ctx) => {
+  try{
   const userId = ctx.from.id.toString();
   await ctx.telegram.sendPhoto(userId, { source: './owner image.jpg' }, {
     caption: 'Tekalign Dabena – Founder of UPix Lottery | Electromechanical Engineering Student',
@@ -114,19 +164,35 @@ LinkedIn: https://www.linkedin.com/in/tekalign-dabena-2bb784324?utm_source=share
       ]
     }
   });
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
 });
 
 // Admin adding a ticket
 bot.hears('Add ticket', (ctx) => {
+  try{
   if (ctx.from.id.toString() === ADMIN_ID) {
     ctx.reply('Please send the ticket numbers you want to list. Note that it must be only text');
     isAdminAddingTicket = true; // Set flag when admin is adding a ticket
     isAddForwarded =false;
   }
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
 });
 
 // User getting a ticket
 bot.hears('Get a ticket🎫', (ctx) => {
+  try{
   if (!savedMessage) {
     ctx.reply('Ooops! No Available tickets right now. Try again later.');
     return;
@@ -134,19 +200,35 @@ bot.hears('Get a ticket🎫', (ctx) => {
   ctx.reply('Hey there! 👋 Can you share your first name with me?');
   isUserGettingTicket = true;
   
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
 });
 
 // Handle the 'Add the luckiest history' button click
 bot.hears('Add the luckiest history', (ctx) => {
+  try{
   if (ctx.from.id.toString() === ADMIN_ID) {
     ctx.reply('Please forward the luckiest history message to this bot.');
     isAdminAddingTicket = false;  // Reset the ticket addition flag
     isAddForwarded = true;   // Flag for adding the history message
   }
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
 });
 
 // Handle text input for various tasks
 bot.on('text', async (ctx) => {
+  try{
   const userId = ctx.from.id.toString();
 
 
@@ -258,12 +340,19 @@ if (isUserInCommentState) {
   delete userData[userId];
 }
   
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
 });
 
 
 // Handle media (image, video, etc.) from the admin
 bot.on(['photo', 'video', 'audio'], async (ctx) => {
- 
+ try{
 if(!isAdminBroadcasting){
   const userId = ctx.from.id.toString();
   // Check if the message is from the admin or a user
@@ -360,8 +449,15 @@ if(isAdminBroadcasting){
 } else {
   ctx.reply('No users to broadcast the message to.');
 }
-}});
-
+}
+} catch (error) {
+  if (error.response && error.response.error_code === 403) {
+      console.log(`User ${ctx.from.id} has blocked the bot.`);
+  } else {
+      console.error('An error occurred:', error);
+  }
+}
+});
 
 // Generate ticket image using a photo background
 async function generateTicketImage(user, userId) {
